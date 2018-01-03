@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 #from django.utils import timezone
 from .models import Student
-#from .forms import MessageForm, SearchForm, StudentForm
+from .forms import StudentForm
 #from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -18,6 +18,27 @@ def home(request):
 def home_json(request):
     return render(request, 'student/home_json.html')
 
+
+def student_new(request):
+
+    if request.method == "POST":
+        form = StudentForm(request.POST)
+        if form.is_valid():
+            student = form.save(commit=False)
+            student.createdby = request.user
+            student.save()
+            # return redirect('post_detail', pk=post.pk)
+            messages.success(request, "Student record with ID: " + str(student.pk) + " has been created ! ")
+            #return redirect(reverse_lazy('student_detail',kwargs={'pk': student.pk }))
+    else:
+        form = StudentForm()
+    
+    return render(request, 'student/student_new.html', {'form': form})
+
+
+def student_detail(request,pk):
+    student = get_object_or_404(Student, pk=pk)
+    return render(request, 'student/student_detail.html', {'student': student})
 		
 
 # Student JSON list filtering
@@ -94,8 +115,8 @@ class student_list_json(BaseDatatableView):
                 # item.course,
                 item.get_course_display(),
                 str(item.pk),
-                #reverse_lazy('student_detail',kwargs={'pk': str(item.pk)})
-                reverse_lazy('student_home'),
+                reverse_lazy('student_detail',kwargs={'pk': str(item.pk)})
+                #reverse_lazy('student_home'),
             ])
             # print(json_data)
         return json_data
